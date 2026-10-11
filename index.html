@@ -7,505 +7,355 @@
 
 <style>
 *{box-sizing:border-box}
-
 body{
-  margin:0;
-  padding:15px;
-  background:#0b1020;
-  color:#fff;
-  font-family:Arial,sans-serif
+  margin:0;background:#08111f;color:#eef4ff;
+  font-family:Arial,sans-serif;padding:16px
 }
-
-header{text-align:center;margin:10px 0 20px}
-
-h1{font-size:24px;color:#55e6a5}
-p{color:#aab5cc;font-size:14px;line-height:1.5}
-
+.container{max-width:650px;margin:auto}
+h1{font-size:25px;color:#56e6b0;margin-bottom:5px}
+.sub{color:#a7b5cb;font-size:13px}
 .card{
-  background:#151d30;
-  border:1px solid #293650;
-  border-radius:14px;
-  padding:16px;
-  margin:14px 0
+  background:#111e30;border:1px solid #293951;
+  padding:16px;border-radius:14px;margin:14px 0
 }
-
-label{
-  display:block;
-  color:#aab5cc;
-  margin:10px 0 7px
+label{display:block;margin:12px 0 6px;color:#b9c8df}
+select,input,button{
+  width:100%;padding:12px;border-radius:8px;
+  border:1px solid #3b4e69;background:#0a1525;
+  color:white;font-size:15px
 }
-
-select,button{
-  width:100%;
-  padding:13px;
-  border-radius:9px;
-  border:1px solid #35415c;
-  background:#202b42;
-  color:white;
-  font-size:16px;
-  margin-bottom:10px
+button{background:#087f67;border:0;font-weight:bold;margin-top:12px}
+button:active{opacity:.8}
+.status{font-size:13px;color:#ffd166;margin-top:10px}
+.signal{
+  font-size:32px;font-weight:bold;text-align:center;
+  padding:14px;border-radius:10px;background:#0a1525
 }
-
-button{
-  background:#16a875;
-  border:0;
-  font-weight:bold
-}
-
-.signal{text-align:center;padding:22px}
-
-#signal{font-size:35px;margin:12px 0}
-
-.badge{
-  display:inline-block;
-  background:#493a19;
-  color:#ffd66b;
-  padding:7px 12px;
-  border-radius:20px;
-  font-size:12px
-}
-
-.stat{
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  margin:15px 0;
-  font-size:14px
-}
-
-.stat span:last-child{
-  text-align:right;
-  overflow-wrap:anywhere
-}
-
-.small{font-size:12px;line-height:1.7}
-
-.good{color:#55e6a5}
-.bad{color:#ff6878}
-.wait{color:#ffd66b}
-
-footer{
-  text-align:center;
-  color:#8390a8;
-  font-size:12px;
-  line-height:1.7;
-  padding:15px
-}
+.green{color:#43e69b}
+.red{color:#ff6878}
+.yellow{color:#ffd166}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:#0a1525;padding:12px;border-radius:9px}
+.metric small{display:block;color:#9eb0c8;margin-bottom:6px}
+.metric strong{font-size:17px;overflow-wrap:anywhere}
+.note{font-size:12px;color:#a7b5cb;line-height:1.6}
 </style>
 </head>
 
 <body>
+<div class="container">
 
-<header>
-  <h1>⚡ AI Candle Predictor PRO</h1>
-  <p>Live Market Analysis Dashboard</p>
-  <span class="badge" id="connection">CONNECTING...</span>
-</header>
+<h1>⚡ AI Candle Predictor PRO</h1>
+<div class="sub">Live Market Analysis Dashboard</div>
 
 <div class="card">
+  <label for="apiKey">Twelve Data API Key</label>
+  <input id="apiKey" type="password"
+         placeholder="Enter your API key"
+         autocomplete="off">
+  <button id="saveKey">Save Key on This Device</button>
+  <div class="note">
+    Key is stored in this browser's local storage.
+    Do not share it. A browser-based key is not fully secret.
+  </div>
 
   <label for="market">Select Market</label>
-
   <select id="market">
-    <option value="EURUSD">EUR/USD</option>
-    <option value="EURJPY">EUR/JPY</option>
-    <option value="GBPUSD">GBP/USD</option>
-    <option value="EURAUD">EUR/AUD</option>
-    <option value="EURNZD">EUR/NZD</option>
-    <option value="XAUUSD">Gold (XAU/USD)</option>
-    <option value="XAGUSD">Silver (XAG/USD)</option>
+    <option value="EUR/USD">EUR/USD</option>
+    <option value="EUR/JPY">EUR/JPY</option>
+    <option value="GBP/USD">GBP/USD</option>
+    <option value="XAU/USD">Gold (XAU/USD)</option>
+    <option value="XAG/USD">Silver (XAG/USD)</option>
   </select>
 
-  <label for="timeframe">Timeframe</label>
-
-  <select id="timeframe">
-    <option value="1m">1 Minute</option>
-    <option value="5m" selected>5 Minutes</option>
-    <option value="15m">15 Minutes</option>
+  <label for="interval">Timeframe</label>
+  <select id="interval">
+    <option value="1min">1 Minute</option>
+    <option value="5min" selected>5 Minutes</option>
+    <option value="15min">15 Minutes</option>
   </select>
 
-  <button id="analyze">🔄 Refresh Market Data</button>
-
-  <p class="small">
-    Data source: Biquote API.
-    Prices may differ from Quotex, especially OTC markets.
-  </p>
-</div>
-
-<div class="card signal">
-
-  <p>Next Candle Estimate</p>
-
-  <h2 id="signal" class="wait">WAIT</h2>
-
-  <span class="badge" id="score">Setup score: --</span>
-
-  <p id="reason">Waiting for market data...</p>
-
-  <p id="price">Latest close: --</p>
-
-  <p id="candleTime">Latest candle: --</p>
-
-  <p id="entry">Entry status: Not available</p>
-
+  <button id="refresh">🔄 Refresh Market Data</button>
+  <div id="status" class="status">Enter your API key to begin.</div>
 </div>
 
 <div class="card">
+  <div class="sub">NEXT CANDLE ESTIMATE</div>
+  <div id="signal" class="signal yellow">WAIT</div>
+  <p id="score" style="text-align:center">Setup score: unavailable</p>
+  <div id="reason" class="note">
+    Waiting for current market data.
+  </div>
+</div>
 
+<div class="card">
   <h3>📊 Technical Indicators</h3>
-
-  <div class="stat">
-    <span>EMA 50</span>
-    <span id="ema">--</span>
+  <div class="grid">
+    <div class="metric"><small>Latest Close</small><strong id="price">--</strong></div>
+    <div class="metric"><small>EMA 50</small><strong id="ema">--</strong></div>
+    <div class="metric"><small>RSI 14</small><strong id="rsi">--</strong></div>
+    <div class="metric"><small>Volume</small><strong id="volume">--</strong></div>
+    <div class="metric"><small>VWAP Estimate</small><strong id="vwap">--</strong></div>
+    <div class="metric"><small>Trend</small><strong id="trend">--</strong></div>
   </div>
-
-  <div class="stat">
-    <span>RSI 14</span>
-    <span id="rsi">--</span>
-  </div>
-
-  <div class="stat">
-    <span>Tick Volume</span>
-    <span id="volume">--</span>
-  </div>
-
-  <div class="stat">
-    <span>VWAP Estimate</span>
-    <span id="vwap">--</span>
-  </div>
-
-  <div class="stat">
-    <span>Trend</span>
-    <span id="trend">--</span>
-  </div>
-
+  <p class="note" id="lastCandle">Latest candle: --</p>
 </div>
 
 <div class="card">
-
   <h3>🔌 Data Connection</h3>
-
-  <p id="status">Checking API connection...</p>
-
-  <p class="small">
-    If the latest candle is old, the dashboard will show WAIT.
-    A successful API response does not necessarily mean the data
-    is current. This page does not place trades automatically.
-  </p>
-
-  <p class="small" id="updated">Last refresh: --</p>
-
+  <div id="connection" class="note">
+    Data has not been requested yet.
+  </div>
 </div>
 
-<footer>
-  Educational tool only.<br>
-  Setup score is NOT a verified winning probability.<br>
-  Trading involves risk. No signal guarantees profit.
-</footer>
+<p class="note">
+Educational tool only. GREEN and RED are indicator-based estimates,
+not verified winning probabilities. No signal guarantees profit.
+Forex/metal prices may differ from Quotex, especially OTC markets.
+Volume and VWAP availability depends on the data source.
+</p>
+
+</div>
 
 <script>
-const API = "https://biquote.io/api/";
-
 const $ = id => document.getElementById(id);
 
 let busy = false;
+let timer = null;
 
-function setText(id, value) {
-  $(id).textContent = value;
+function setStatus(message) {
+  $("status").textContent = message;
 }
 
 function showWait(message) {
-  setText("signal", "WAIT");
-  $("signal").className = "wait";
-  setText("score", "Setup score: unavailable");
-  setText("reason", message);
-  setText("entry", "Entry status: Not available");
+  $("signal").textContent = "WAIT";
+  $("signal").className = "signal yellow";
+  $("score").textContent = "Setup score: unavailable";
+  $("reason").textContent = message;
 }
 
-function fmt(value) {
-  return Number.isFinite(value) ? value.toFixed(5) : "--";
+function num(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
-// Calculate EMA using historical closes.
-// Input is oldest candle to newest candle.
-function calculateEMA(values, period) {
+function fmt(value, digits=5) {
+  return value === null || !Number.isFinite(value)
+    ? "--" : value.toFixed(digits);
+}
+
+function ema(values, period) {
   if (values.length < period) return null;
+  const k = 2 / (period + 1);
+  let result = values.slice(0, period)
+    .reduce((a,b)=>a+b,0) / period;
 
-  const alpha = 2 / (period + 1);
-
-  let ema = values.slice(0, period)
-    .reduce((sum, value) => sum + value, 0) / period;
-
-  for (let i = period; i < values.length; i++) {
-    ema = values[i] * alpha + ema * (1 - alpha);
+  for (let i=period; i<values.length; i++) {
+    result = values[i] * k + result * (1-k);
   }
-
-  return ema;
+  return result;
 }
 
-// Wilder-style RSI.
-function calculateRSI(values, period = 14) {
+function rsi(values, period=14) {
   if (values.length <= period) return null;
 
-  let gain = 0;
-  let loss = 0;
-
-  for (let i = 1; i <= period; i++) {
-    const change = values[i] - values[i - 1];
-
-    if (change > 0) gain += change;
-    else loss -= change;
+  let gain=0, loss=0;
+  for (let i=1; i<=period; i++) {
+    const change=values[i]-values[i-1];
+    if(change>0) gain+=change;
+    else loss-=change;
   }
 
-  let avgGain = gain / period;
-  let avgLoss = loss / period;
+  let avgGain=gain/period;
+  let avgLoss=loss/period;
 
-  for (let i = period + 1; i < values.length; i++) {
-    const change = values[i] - values[i - 1];
-
-    avgGain =
-      (avgGain * (period - 1) + Math.max(change, 0)) / period;
-
-    avgLoss =
-      (avgLoss * (period - 1) + Math.max(-change, 0)) / period;
+  for(let i=period+1;i<values.length;i++){
+    const change=values[i]-values[i-1];
+    avgGain=(avgGain*(period-1)+Math.max(change,0))/period;
+    avgLoss=(avgLoss*(period-1)+Math.max(-change,0))/period;
   }
 
-  if (avgLoss === 0) return avgGain === 0 ? 50 : 100;
-
-  const rs = avgGain / avgLoss;
-
-  return 100 - (100 / (1 + rs));
+  if(avgLoss===0) return 100;
+  return 100-(100/(1+avgGain/avgLoss));
 }
 
-// VWAP estimate using tick volume as a weight.
-// This is not exchange-traded volume.
-function calculateVWAP(bars) {
-  let weighted = 0;
-  let totalWeight = 0;
+function estimateVWAP(bars) {
+  let weighted=0, total=0;
 
-  for (const bar of bars) {
-    const weight = Number(bar.tickVolume ?? bar.volume ?? 0);
-
-    if (!Number.isFinite(weight) || weight <= 0) continue;
-
-    const typical =
-      (Number(bar.high) + Number(bar.low) + Number(bar.close)) / 3;
-
-    weighted += typical * weight;
-    totalWeight += weight;
+  for(const b of bars){
+    const vol=num(b.volume);
+    if(vol===null || vol<=0) continue;
+    const typical=(b.high+b.low+b.close)/3;
+    weighted+=typical*vol;
+    total+=vol;
   }
 
-  return totalWeight > 0 ? weighted / totalWeight : null;
+  return total>0 ? weighted/total : null;
 }
 
-async function analyze() {
-  if (busy) return;
-  busy = true;
+function resetIndicators() {
+  ["price","ema","rsi","volume","vwap","trend"]
+    .forEach(id=>$(id).textContent="--");
+  $("lastCandle").textContent="Latest candle: --";
+}
 
-  $("analyze").disabled = true;
-  setText("connection", "CHECKING DATA...");
+async function loadData() {
+  if(busy) return;
+  busy=true;
 
-  showWait("Fetching market candles...");
+  $("refresh").disabled=true;
+  setStatus("Connecting to Twelve Data...");
+  $("connection").textContent="Requesting market candles...";
+  showWait("Waiting for data validation.");
+  resetIndicators();
 
   try {
-    const symbol = $("market").value;
-    const interval = $("timeframe").value;
+    const key=$("apiKey").value.trim();
+    if(!key) throw new Error("Enter your Twelve Data API key first.");
 
-    const url =
-      API + encodeURIComponent(symbol) +
-      "/ohlc?interval=" + encodeURIComponent(interval) +
-      "&limit=150";
+    const symbol=$("market").value;
+    const interval=$("interval").value;
 
-    const response = await fetch(url, {
-      cache: "no-store"
-    });
+    const url=new URL("https://api.twelvedata.com/time_series");
+    url.searchParams.set("symbol",symbol);
+    url.searchParams.set("interval",interval);
+    url.searchParams.set("outputsize","150");
+    url.searchParams.set("timezone","UTC");
+    url.searchParams.set("apikey",key);
 
-    if (!response.ok) {
-      throw new Error("API returned HTTP " + response.status);
+    const response=await fetch(url.toString());
+    if(!response.ok) {
+      throw new Error("HTTP error "+response.status);
     }
 
-    const data = await response.json();
+    const data=await response.json();
 
-    if (!Array.isArray(data.bars) || data.bars.length < 55) {
-      throw new Error(
-        "Not enough candles for EMA 50. Received: " +
-        (data.bars?.length || 0)
-      );
+    if(data.status==="error" || !Array.isArray(data.values)){
+      throw new Error(data.message || "No candle data returned for this symbol.");
     }
 
-    // API data may arrive newest-first.
-    const bars = data.bars
-      .filter(b =>
-        Number.isFinite(Number(b.close)) &&
-        Number.isFinite(Number(b.high)) &&
-        Number.isFinite(Number(b.low)) &&
-        Number.isFinite(Number(b.open)) &&
-        Number.isFinite(Date.parse(b.openTime))
-      )
-      .sort((a, b) =>
-        Date.parse(a.openTime) - Date.parse(b.openTime)
-      );
+    // API values usually arrive newest first; calculate chronologically.
+    const bars=data.values.map(v=>({
+      time:v.datetime,
+      open:num(v.open),
+      high:num(v.high),
+      low:num(v.low),
+      close:num(v.close),
+      volume:num(v.volume)
+    })).filter(b=>
+      b.time && b.open!==null && b.high!==null &&
+      b.low!==null && b.close!==null
+    ).sort((a,b)=>new Date(a.time)-new Date(b.time));
 
-    if (bars.length < 55) {
-      throw new Error("Insufficient valid historical candles.");
+    if(bars.length<55){
+      throw new Error("Not enough candles for EMA 50. Try again later.");
     }
 
-    const latest = bars[bars.length - 1];
-    const previous = bars[bars.length - 2];
+    const closes=bars.map(b=>b.close);
+    const latest=bars[bars.length-1];
+    const ema50=ema(closes,50);
+    const rsi14=rsi(closes,14);
+    const vwap=estimateVWAP(bars);
 
-    const closes = bars.map(b => Number(b.close));
+    $("price").textContent=fmt(latest.close);
+    $("ema").textContent=fmt(ema50);
+    $("rsi").textContent=fmt(rsi14,2);
+    $("volume").textContent=latest.volume===null
+      ? "Unavailable" : String(latest.volume);
+    $("vwap").textContent=vwap===null
+      ? "Unavailable" : fmt(vwap);
+    $("trend").textContent=latest.close>ema50
+      ? "Bullish" : latest.close<ema50 ? "Bearish" : "Neutral";
 
-    const ema = calculateEMA(closes, 50);
-    const rsi = calculateRSI(closes, 14);
-    const vwap = calculateVWAP(bars);
+    const date=new Date(latest.time);
+    $("lastCandle").textContent=
+      "Latest candle (UTC): "+date.toLocaleString("en-GB",
+      {timeZone:"UTC"})+" UTC";
 
-    if (ema === null || rsi === null) {
-      throw new Error("Indicators could not be calculated.");
-    }
+    const ageMinutes=(Date.now()-date.getTime())/60000;
+    const allowedAge=interval==="1min" ? 4 :
+                     interval==="5min" ? 12 : 32;
 
-    const close = Number(latest.close);
-    const lastOpen = Number(latest.open);
-
-    const latestTime = Date.parse(latest.openTime);
-    const ageMinutes = (Date.now() - latestTime) / 60000;
-
-    const intervalMinutes = Number(interval.replace("m", ""));
-
-    // Allow a short delay, but reject historical/stale data.
-    const isFresh =
-      ageMinutes >= -2 &&
-      ageMinutes <= intervalMinutes * 2 + 3;
-
-    setText("price", "Latest close: " + fmt(close));
-    setText("candleTime",
-      "Latest candle: " + new Date(latestTime).toLocaleString());
-
-    setText("ema", fmt(ema));
-    setText("rsi", rsi.toFixed(2));
-    setText("volume",
-      String(latest.tickVolume ?? latest.volume ?? "N/A"));
-    setText("vwap", vwap === null ? "Unavailable" : fmt(vwap));
-
-    const trendUp = close > ema;
-    const trendDown = close < ema;
-
-    setText("trend",
-      trendUp ? "Bullish" : trendDown ? "Bearish" : "Neutral");
-
-    if (!isFresh) {
-      setText("connection", "STALE DATA");
-      $("connection").style.color = "#ffd66b";
-
-      setText("status",
-        "API responded, but its latest candle is too old for a live signal.");
-
-      setText("updated",
-        "Last refresh: " + new Date().toLocaleString());
-
-      showWait(
-        "Historical data detected. Waiting for a fresh candle."
-      );
-
+    if(!Number.isFinite(ageMinutes) || ageMinutes < -2 ||
+       ageMinutes > allowedAge) {
+      $("connection").textContent=
+        "API responded, but the newest candle is stale or its timestamp is invalid.";
+      showWait("Historical data detected. Waiting for a fresh candle.");
+      setStatus("STALE DATA");
       return;
     }
 
-    // Simple indicator agreement score.
-    // This is a rule-based score, not a probability.
-    let bull = 0;
-    let bear = 0;
-
-    if (trendUp) bull++;
-    if (trendDown) bear++;
-
-    if (rsi > 50 && rsi < 70) bull++;
-    if (rsi < 50 && rsi > 30) bear++;
-
-    if (close > Number(previous.close)) bull++;
-    if (close < Number(previous.close)) bear++;
-
-    if (vwap !== null && close > vwap) bull++;
-    if (vwap !== null && close < vwap) bear++;
-
-    // Avoid using a candle that has not closed.
-    const candleClosed = latest.isOpen === false;
-
-    if (!candleClosed) {
-      setText("connection", "CANDLE STILL OPEN");
-      setText("status",
-        "Latest candle is not confirmed closed.");
-      showWait("Waiting for the current candle to close.");
-      return;
+    // Indicator agreement score, not a probability.
+    let points=0;
+    if(latest.close>ema50) points++;
+    if(latest.close<ema50) points--;
+    if(rsi14>50 && rsi14<70) points++;
+    if(rsi14<50 && rsi14>30) points--;
+    if(bars.length>=2){
+      const previous=bars[bars.length-2];
+      if(latest.close>previous.close) points++;
+      if(latest.close<previous.close) points--;
     }
 
-    let signal = "WAIT";
-    let score = 0;
-    let reason = "Indicators do not agree clearly.";
+    const aligned=Math.abs(points);
+    const setupScore=Math.round((aligned/3)*100);
 
-    if (bull >= 3 && bull > bear) {
-      signal = "GREEN";
-      score = Math.round(50 + (bull - bear) * 10);
-      reason = "Bullish indicator agreement.";
-    } else if (bear >= 3 && bear > bull) {
-      signal = "RED";
-      score = Math.round(50 + (bear - bull) * 10);
-      reason = "Bearish indicator agreement.";
+    if(points>=2){
+      $("signal").textContent="GREEN";
+      $("signal").className="signal green";
+      $("reason").textContent=
+        "Bullish indicators agree. Confirm the live candle on your broker chart.";
+    } else if(points<=-2){
+      $("signal").textContent="RED";
+      $("signal").className="signal red";
+      $("reason").textContent=
+        "Bearish indicators agree. Confirm the live candle on your broker chart.";
+    } else {
+      showWait("Indicators do not agree strongly enough.");
     }
 
-    score = Math.min(80, score);
+    $("score").textContent=
+      "Indicator agreement: "+setupScore+"% (not win probability)";
+    $("connection").textContent=
+      "Data received. Latest candle age: "+Math.max(0,ageMinutes).toFixed(1)+
+      " minutes. Source: Twelve Data.";
+    setStatus("DATA UPDATED");
 
-    setText("signal", signal);
-    $("signal").className =
-      signal === "GREEN" ? "good" :
-      signal === "RED" ? "bad" : "wait";
-
-    setText("score",
-      signal === "WAIT"
-        ? "Setup score: weak / mixed"
-        : "Indicator agreement score: " + score + "/100");
-
-    setText("reason", reason);
-
-    setText("entry",
-      signal === "WAIT"
-        ? "Entry status: Wait for confirmation"
-        : "Entry status: Review manually; no guaranteed entry");
-
-    setText("connection", "DATA RECEIVED");
-    $("connection").style.color = "#55e6a5";
-
-    setText("status",
-      "Received " + bars.length +
-      " candles. Latest candle age: " +
-      Math.max(0, Math.round(ageMinutes)) + " min.");
-
-    setText("updated",
-      "Last refresh: " + new Date().toLocaleString());
-
-  } catch (error) {
-    setText("connection", "DATA ERROR");
-    $("connection").style.color = "#ff6878";
-
-    setText("status",
-      "Could not fetch data: " + error.message);
-
-    showWait(
-      "No verified live signal. Check API availability, network or browser CORS restrictions."
-    );
-
+  } catch(error) {
+    showWait(error.message);
+    $("connection").textContent=
+      "Could not validate fresh market data. Check API key, symbol access, internet and plan limits.";
+    setStatus("DATA ERROR: "+error.message);
   } finally {
-    busy = false;
-    $("analyze").disabled = false;
+    busy=false;
+    $("refresh").disabled=false;
   }
 }
 
-$("analyze").addEventListener("click", analyze);
-$("market").addEventListener("change", analyze);
-$("timeframe").addEventListener("change", analyze);
+$("saveKey").addEventListener("click",()=>{
+  const key=$("apiKey").value.trim();
+  if(!key){
+    setStatus("Enter the API key first.");
+    return;
+  }
+  try {
+    localStorage.setItem("td_api_key",key);
+    setStatus("Key saved on this device.");
+  } catch(e) {
+    setStatus("Could not save key. Keep it in the input box.");
+  }
+});
 
-// Refresh once per minute.
-analyze();
-setInterval(analyze, 60000);
+try {
+  $("apiKey").value=localStorage.getItem("td_api_key") || "";
+} catch(e) {}
+
+$("refresh").addEventListener("click",loadData);
+$("market").addEventListener("change",loadData);
+$("interval").addEventListener("change",loadData);
+
+loadData();
+timer=setInterval(loadData,60000);
 </script>
-
 </body>
 </html>
