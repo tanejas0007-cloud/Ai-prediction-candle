@@ -110,4 +110,402 @@ footer{
     <option value="EURUSD">EUR/USD</option>
     <option value="EURJPY">EUR/JPY</option>
     <option value="GBPUSD">GBP/USD</option>
-    <
+    <option value="EURAUD">EUR/AUD</option>
+    <option value="EURNZD">EUR/NZD</option>
+    <option value="XAUUSD">Gold (XAU/USD)</option>
+    <option value="XAGUSD">Silver (XAG/USD)</option>
+  </select>
+
+  <label for="timeframe">Timeframe</label>
+
+  <select id="timeframe">
+    <option value="1m">1 Minute</option>
+    <option value="5m" selected>5 Minutes</option>
+    <option value="15m">15 Minutes</option>
+  </select>
+
+  <button id="analyze">🔄 Refresh Market Data</button>
+
+  <p class="small">
+    Data source: Biquote API.
+    Prices may differ from Quotex, especially OTC markets.
+  </p>
+</div>
+
+<div class="card signal">
+
+  <p>Next Candle Estimate</p>
+
+  <h2 id="signal" class="wait">WAIT</h2>
+
+  <span class="badge" id="score">Setup score: --</span>
+
+  <p id="reason">Waiting for market data...</p>
+
+  <p id="price">Latest close: --</p>
+
+  <p id="candleTime">Latest candle: --</p>
+
+  <p id="entry">Entry status: Not available</p>
+
+</div>
+
+<div class="card">
+
+  <h3>📊 Technical Indicators</h3>
+
+  <div class="stat">
+    <span>EMA 50</span>
+    <span id="ema">--</span>
+  </div>
+
+  <div class="stat">
+    <span>RSI 14</span>
+    <span id="rsi">--</span>
+  </div>
+
+  <div class="stat">
+    <span>Tick Volume</span>
+    <span id="volume">--</span>
+  </div>
+
+  <div class="stat">
+    <span>VWAP Estimate</span>
+    <span id="vwap">--</span>
+  </div>
+
+  <div class="stat">
+    <span>Trend</span>
+    <span id="trend">--</span>
+  </div>
+
+</div>
+
+<div class="card">
+
+  <h3>🔌 Data Connection</h3>
+
+  <p id="status">Checking API connection...</p>
+
+  <p class="small">
+    If the latest candle is old, the dashboard will show WAIT.
+    A successful API response does not necessarily mean the data
+    is current. This page does not place trades automatically.
+  </p>
+
+  <p class="small" id="updated">Last refresh: --</p>
+
+</div>
+
+<footer>
+  Educational tool only.<br>
+  Setup score is NOT a verified winning probability.<br>
+  Trading involves risk. No signal guarantees profit.
+</footer>
+
+<script>
+const API = "https://biquote.io/api/";
+
+const $ = id => document.getElementById(id);
+
+let busy = false;
+
+function setText(id, value) {
+  $(id).textContent = value;
+}
+
+function showWait(message) {
+  setText("signal", "WAIT");
+  $("signal").className = "wait";
+  setText("score", "Setup score: unavailable");
+  setText("reason", message);
+  setText("entry", "Entry status: Not available");
+}
+
+function fmt(value) {
+  return Number.isFinite(value) ? value.toFixed(5) : "--";
+}
+
+// Calculate EMA using historical closes.
+// Input is oldest candle to newest candle.
+function calculateEMA(values, period) {
+  if (values.length < period) return null;
+
+  const alpha = 2 / (period + 1);
+
+  let ema = values.slice(0, period)
+    .reduce((sum, value) => sum + value, 0) / period;
+
+  for (let i = period; i < values.length; i++) {
+    ema = values[i] * alpha + ema * (1 - alpha);
+  }
+
+  return ema;
+}
+
+// Wilder-style RSI.
+function calculateRSI(values, period = 14) {
+  if (values.length <= period) return null;
+
+  let gain = 0;
+  let loss = 0;
+
+  for (let i = 1; i <= period; i++) {
+    const change = values[i] - values[i - 1];
+
+    if (change > 0) gain += change;
+    else loss -= change;
+  }
+
+  let avgGain = gain / period;
+  let avgLoss = loss / period;
+
+  for (let i = period + 1; i < values.length; i++) {
+    const change = values[i] - values[i - 1];
+
+    avgGain =
+      (avgGain * (period - 1) + Math.max(change, 0)) / period;
+
+    avgLoss =
+      (avgLoss * (period - 1) + Math.max(-change, 0)) / period;
+  }
+
+  if (avgLoss === 0) return avgGain === 0 ? 50 : 100;
+
+  const rs = avgGain / avgLoss;
+
+  return 100 - (100 / (1 + rs));
+}
+
+// VWAP estimate using tick volume as a weight.
+// This is not exchange-traded volume.
+function calculateVWAP(bars) {
+  let weighted = 0;
+  let totalWeight = 0;
+
+  for (const bar of bars) {
+    const weight = Number(bar.tickVolume ?? bar.volume ?? 0);
+
+    if (!Number.isFinite(weight) || weight <= 0) continue;
+
+    const typical =
+      (Number(bar.high) + Number(bar.low) + Number(bar.close)) / 3;
+
+    weighted += typical * weight;
+    totalWeight += weight;
+  }
+
+  return totalWeight > 0 ? weighted / totalWeight : null;
+}
+
+async function analyze() {
+  if (busy) return;
+  busy = true;
+
+  $("analyze").disabled = true;
+  setText("connection", "CHECKING DATA...");
+
+  showWait("Fetching market candles...");
+
+  try {
+    const symbol = $("market").value;
+    const interval = $("timeframe").value;
+
+    const url =
+      API + encodeURIComponent(symbol) +
+      "/ohlc?interval=" + encodeURIComponent(interval) +
+      "&limit=150";
+
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error("API returned HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data.bars) || data.bars.length < 55) {
+      throw new Error(
+        "Not enough candles for EMA 50. Received: " +
+        (data.bars?.length || 0)
+      );
+    }
+
+    // API data may arrive newest-first.
+    const bars = data.bars
+      .filter(b =>
+        Number.isFinite(Number(b.close)) &&
+        Number.isFinite(Number(b.high)) &&
+        Number.isFinite(Number(b.low)) &&
+        Number.isFinite(Number(b.open)) &&
+        Number.isFinite(Date.parse(b.openTime))
+      )
+      .sort((a, b) =>
+        Date.parse(a.openTime) - Date.parse(b.openTime)
+      );
+
+    if (bars.length < 55) {
+      throw new Error("Insufficient valid historical candles.");
+    }
+
+    const latest = bars[bars.length - 1];
+    const previous = bars[bars.length - 2];
+
+    const closes = bars.map(b => Number(b.close));
+
+    const ema = calculateEMA(closes, 50);
+    const rsi = calculateRSI(closes, 14);
+    const vwap = calculateVWAP(bars);
+
+    if (ema === null || rsi === null) {
+      throw new Error("Indicators could not be calculated.");
+    }
+
+    const close = Number(latest.close);
+    const lastOpen = Number(latest.open);
+
+    const latestTime = Date.parse(latest.openTime);
+    const ageMinutes = (Date.now() - latestTime) / 60000;
+
+    const intervalMinutes = Number(interval.replace("m", ""));
+
+    // Allow a short delay, but reject historical/stale data.
+    const isFresh =
+      ageMinutes >= -2 &&
+      ageMinutes <= intervalMinutes * 2 + 3;
+
+    setText("price", "Latest close: " + fmt(close));
+    setText("candleTime",
+      "Latest candle: " + new Date(latestTime).toLocaleString());
+
+    setText("ema", fmt(ema));
+    setText("rsi", rsi.toFixed(2));
+    setText("volume",
+      String(latest.tickVolume ?? latest.volume ?? "N/A"));
+    setText("vwap", vwap === null ? "Unavailable" : fmt(vwap));
+
+    const trendUp = close > ema;
+    const trendDown = close < ema;
+
+    setText("trend",
+      trendUp ? "Bullish" : trendDown ? "Bearish" : "Neutral");
+
+    if (!isFresh) {
+      setText("connection", "STALE DATA");
+      $("connection").style.color = "#ffd66b";
+
+      setText("status",
+        "API responded, but its latest candle is too old for a live signal.");
+
+      setText("updated",
+        "Last refresh: " + new Date().toLocaleString());
+
+      showWait(
+        "Historical data detected. Waiting for a fresh candle."
+      );
+
+      return;
+    }
+
+    // Simple indicator agreement score.
+    // This is a rule-based score, not a probability.
+    let bull = 0;
+    let bear = 0;
+
+    if (trendUp) bull++;
+    if (trendDown) bear++;
+
+    if (rsi > 50 && rsi < 70) bull++;
+    if (rsi < 50 && rsi > 30) bear++;
+
+    if (close > Number(previous.close)) bull++;
+    if (close < Number(previous.close)) bear++;
+
+    if (vwap !== null && close > vwap) bull++;
+    if (vwap !== null && close < vwap) bear++;
+
+    // Avoid using a candle that has not closed.
+    const candleClosed = latest.isOpen === false;
+
+    if (!candleClosed) {
+      setText("connection", "CANDLE STILL OPEN");
+      setText("status",
+        "Latest candle is not confirmed closed.");
+      showWait("Waiting for the current candle to close.");
+      return;
+    }
+
+    let signal = "WAIT";
+    let score = 0;
+    let reason = "Indicators do not agree clearly.";
+
+    if (bull >= 3 && bull > bear) {
+      signal = "GREEN";
+      score = Math.round(50 + (bull - bear) * 10);
+      reason = "Bullish indicator agreement.";
+    } else if (bear >= 3 && bear > bull) {
+      signal = "RED";
+      score = Math.round(50 + (bear - bull) * 10);
+      reason = "Bearish indicator agreement.";
+    }
+
+    score = Math.min(80, score);
+
+    setText("signal", signal);
+    $("signal").className =
+      signal === "GREEN" ? "good" :
+      signal === "RED" ? "bad" : "wait";
+
+    setText("score",
+      signal === "WAIT"
+        ? "Setup score: weak / mixed"
+        : "Indicator agreement score: " + score + "/100");
+
+    setText("reason", reason);
+
+    setText("entry",
+      signal === "WAIT"
+        ? "Entry status: Wait for confirmation"
+        : "Entry status: Review manually; no guaranteed entry");
+
+    setText("connection", "DATA RECEIVED");
+    $("connection").style.color = "#55e6a5";
+
+    setText("status",
+      "Received " + bars.length +
+      " candles. Latest candle age: " +
+      Math.max(0, Math.round(ageMinutes)) + " min.");
+
+    setText("updated",
+      "Last refresh: " + new Date().toLocaleString());
+
+  } catch (error) {
+    setText("connection", "DATA ERROR");
+    $("connection").style.color = "#ff6878";
+
+    setText("status",
+      "Could not fetch data: " + error.message);
+
+    showWait(
+      "No verified live signal. Check API availability, network or browser CORS restrictions."
+    );
+
+  } finally {
+    busy = false;
+    $("analyze").disabled = false;
+  }
+}
+
+$("analyze").addEventListener("click", analyze);
+$("market").addEventListener("change", analyze);
+$("timeframe").addEventListener("change", analyze);
+
+// Refresh once per minute.
+analyze();
+setInterval(analyze, 60000);
+</script>
+
+</body>
+</html>
