@@ -4,107 +4,110 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Candle Predictor PRO</title>
+
 <style>
 *{box-sizing:border-box}
+
 body{
-  margin:0;background:#0b1020;color:#fff;
-  font-family:Arial,sans-serif;padding:16px
+  margin:0;
+  padding:15px;
+  background:#0b1020;
+  color:#fff;
+  font-family:Arial,sans-serif
 }
-header{text-align:center;margin:10px 0 22px}
-h1{font-size:25px;color:#55e6a5;margin-bottom:8px}
-p{color:#aab5cc;font-size:14px}
+
+header{text-align:center;margin:10px 0 20px}
+
+h1{font-size:24px;color:#55e6a5}
+p{color:#aab5cc;font-size:14px;line-height:1.5}
+
 .card{
-  background:#151d30;border:1px solid #293650;
-  border-radius:14px;padding:16px;margin:14px 0
+  background:#151d30;
+  border:1px solid #293650;
+  border-radius:14px;
+  padding:16px;
+  margin:14px 0
 }
-label{display:block;color:#aab5cc;margin-bottom:8px}
+
+label{
+  display:block;
+  color:#aab5cc;
+  margin:10px 0 7px
+}
+
 select,button{
-  width:100%;padding:13px;border-radius:9px;
-  border:1px solid #35415c;background:#202b42;
-  color:white;font-size:16px;margin-bottom:12px
+  width:100%;
+  padding:13px;
+  border-radius:9px;
+  border:1px solid #35415c;
+  background:#202b42;
+  color:white;
+  font-size:16px;
+  margin-bottom:10px
 }
-button{background:#16a875;border:0;font-weight:bold}
+
+button{
+  background:#16a875;
+  border:0;
+  font-weight:bold
+}
+
 .signal{text-align:center;padding:22px}
-.signal h2{font-size:32px;margin:12px 0}
+
+#signal{font-size:35px;margin:12px 0}
+
 .badge{
-  display:inline-block;background:#493a19;color:#ffd66b;
-  padding:7px 12px;border-radius:20px;font-size:12px
+  display:inline-block;
+  background:#493a19;
+  color:#ffd66b;
+  padding:7px 12px;
+  border-radius:20px;
+  font-size:12px
 }
-.small{font-size:12px;line-height:1.6;color:#aab5cc}
-.stat{display:flex;justify-content:space-between;margin:13px 0}
-footer{text-align:center;font-size:12px;color:#8390a8}
+
+.stat{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin:15px 0;
+  font-size:14px
+}
+
+.stat span:last-child{
+  text-align:right;
+  overflow-wrap:anywhere
+}
+
+.small{font-size:12px;line-height:1.7}
+
+.good{color:#55e6a5}
+.bad{color:#ff6878}
+.wait{color:#ffd66b}
+
+footer{
+  text-align:center;
+  color:#8390a8;
+  font-size:12px;
+  line-height:1.7;
+  padding:15px
+}
 </style>
 </head>
+
 <body>
 
 <header>
   <h1>⚡ AI Candle Predictor PRO</h1>
-  <p>Market Analysis Dashboard</p>
-  <span class="badge">DEMO · LIVE DATA NOT CONNECTED</span>
+  <p>Live Market Analysis Dashboard</p>
+  <span class="badge" id="connection">CONNECTING...</span>
 </header>
 
 <div class="card">
+
   <label for="market">Select Market</label>
+
   <select id="market">
-    <option>EUR/USD</option>
-    <option>EUR/JPY</option>
-    <option>GBP/USD</option>
-    <option>EUR/AUD</option>
-    <option>EUR/NZD</option>
-    <option>Gold (XAU/USD)</option>
-    <option>Silver (XAG/USD)</option>
-  </select>
-
-  <label for="timeframe">Timeframe</label>
-  <select id="timeframe">
-    <option value="1">1 Minute</option>
-    <option value="5" selected>5 Minutes</option>
-    <option value="15">15 Minutes</option>
-  </select>
-
-  <button onclick="showStatus()">Check Connection Status</button>
-</div>
-
-<div class="card signal">
-  <p>Next Candle Estimate</p>
-  <h2 id="signal">WAIT</h2>
-  <div class="badge" id="confidence">No verified probability</div>
-  <p id="timing">Waiting for a live market-data feed</p>
-</div>
-
-<div class="card">
-  <h3>📊 Analysis Components</h3>
-  <div class="stat"><span>EMA 50</span><span>Awaiting data</span></div>
-  <div class="stat"><span>RSI</span><span>Awaiting data</span></div>
-  <div class="stat"><span>Volume</span><span>Awaiting data</span></div>
-  <div class="stat"><span>VWAP</span><span>Awaiting data</span></div>
-</div>
-
-<div class="card">
-  <h3>🔌 Data Connection</h3>
-  <p id="status">Live data feed has not been configured.</p>
-  <p class="small">
-    This dashboard does not currently read Quotex prices or
-    generate verified live signals. A compatible market-data
-    connection is required before calculating indicators.
-  </p>
-</div>
-
-<footer>
-  Educational tool only · Signals are uncertain · Trading involves risk
-</footer>
-
-<script>
-function showStatus(){
-  document.getElementById("status").textContent =
-    "Not connected: live market data must be configured.";
-  document.getElementById("signal").textContent = "WAIT";
-  document.getElementById("confidence").textContent =
-    "No verified probability";
-  document.getElementById("timing").textContent =
-    "No live entry timing available";
-}
-</script>
-
-</body>
-</html>
+    <option value="EURUSD">EUR/USD</option>
+    <option value="EURJPY">EUR/JPY</option>
+    <option value="GBPUSD">GBP/USD</option>
+    <
